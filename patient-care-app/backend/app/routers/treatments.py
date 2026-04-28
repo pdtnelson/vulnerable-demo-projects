@@ -4,6 +4,7 @@ from app.database import get_db_connection
 from app.encryption import encrypt_phi, decrypt_phi
 from app.schemas.treatment import TreatmentCreate, TreatmentUpdate, TreatmentResponse
 from app.auth.rbac import require_permission
+from app.auth.dependencies import get_current_user
 from app.middleware.audit import log_audit
 
 router = APIRouter(prefix="/treatments", tags=["treatments"])
@@ -109,7 +110,7 @@ async def update_treatment(
     treatment_id: int,
     request: Request,
     treatment_data: TreatmentUpdate,
-    current_user: dict = Depends(require_permission("treatments:update")),
+    current_user: dict = Depends(get_current_user),
 ):
     conn = get_db_connection()
     try:
