@@ -144,13 +144,6 @@ async def update_visit(
         conn.execute(f"UPDATE visits SET {set_clause} WHERE id = ?", values)
         conn.commit()
 
-        log_audit(
-            user_id=current_user["id"], user_role=current_user["role"],
-            action="UPDATE", resource_type="visit", resource_id=visit_id,
-            details={"updated_fields": list(update_data.keys())},
-            ip_address=request.client.host if request.client else None, success=True,
-        )
-
         row = conn.execute("SELECT * FROM visits WHERE id = ?", (visit_id,)).fetchone()
         return _row_to_response(row)
     finally:

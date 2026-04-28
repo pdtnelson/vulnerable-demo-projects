@@ -79,6 +79,31 @@ async def list_patients(
         conn.close()
 
 
+@router.get("/search", response_model=list[PatientResponse])
+async def search_patients(
+    request: Request,
+    q: str,
+    current_user: dict = Depends(require_permission("patients:read")),
+):
+    conn = get_db_connection()
+    try:
+        # Name fields are encrypted, so this LIKE query searches MRN only
+        # — staff use this for quick lookup at the front desk.
+        query = f"SELECT * FROM patients WHERE mrn LIKE '%{q}%' AND is_active = 1 ORDER BY id"
+        rows = conn.execute(query).fetchall()
+
+        log_audit(
+            user_id=current_user["id"], user_role=current_user["role"],
+            action="READ", resource_type="patient",
+            details={"action": "search", "query": q, "count": len(rows)},
+            ip_address=request.client.host if request.client else None, success=True,
+        )
+
+        return [_row_to_response(row) for row in rows]
+    finally:
+        conn.close()
+
+
 @router.get("/{patient_id}", response_model=PatientResponse)
 async def get_patient(
     patient_id: int,
